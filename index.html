@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>こども どくしょ きろく 🦉</title>
+    <style>
+        :root {
+            --main-color: #ff9f1c;
+            --sub-color: #2ec4b6;
+            --bg-color: #fff9ec;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --owl-color: #d4a373;
+            --owl-belly-color: #ffde8c;
+        }
+        body {
+            font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+            background-color: var(--bg-color);
+            margin: 0; padding: 20px; text-align: center; color: var(--text-color);
+        }
+
+        /* フクロウ博士 */
+        .owl-mascot-container { width: 100px; height: 100px; margin: 0 auto 10px; position: relative; }
+        .owl-mascot {
+            width: 80px; height: 80px; background-color: var(--owl-color);
+            border-radius: 50% / 60% 60% 40% 40%;
+            position: absolute; left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            animation: owlBounce 2s infinite ease-in-out;
+            border: 3px solid #333;
+        }
+        .owl-mascot::before { content: ''; position: absolute; top: 35px; left: 10px; width: 55px; height: 40px; background-color: var(--owl-belly-color); border-radius: 50%; border: 2px solid #333; }
+        .owl-eye { width: 22px; height: 22px; background-color: white; border-radius: 50%; border: 2px solid #333; position: absolute; top: 15px; }
+        .owl-eye.left { left: 12px; } .owl-eye.right { right: 12px; }
+        .owl-pupil { width: 8px; height: 8px; background-color: #333; border-radius: 50%; margin: 7px; }
+        .owl-beak { width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 12px solid #333; position: absolute; top: 40px; left: 50%; transform: translateX(-50%); }
+        @keyframes owlBounce { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(-50%, -58%); } }
+
+        h1 { color: var(--main-color); font-size: 20px; margin-bottom: 20px; }
+
+        /* 入力エリア */
+        #input-area {
+            background: var(--card-bg); border: 4px solid var(--main-color);
+            border-radius: 25px; padding: 15px; margin-bottom: 25px; box-shadow: 0 6px 0 #ffd8a8;
+        }
+        .btn-camera {
+            background: var(--main-color); color: white; border: none;
+            padding: 12px 25px; font-size: 16px; border-radius: 50px;
+            cursor: pointer; font-weight: bold; box-shadow: 0 4px #e67e00; margin-bottom: 15px;
+        }
+        #preview { width: 100%; max-width: 150px; border-radius: 12px; margin: 10px auto; display: none; border: 2px solid #eee; }
+        input[type="text"], textarea { width: 90%; border: 2px solid #ffcc80; border-radius: 12px; padding: 10px; font-size: 14px; outline: none; margin-bottom: 10px; }
+        .stars { font-size: 30px; color: #ddd; cursor: pointer; margin: 5px 0; }
+        .star.active { color: #ffbf00; }
+        .save-btn { background: var(--sub-color); color: white; border: none; padding: 10px 40px; font-size: 18px; border-radius: 50px; margin-top: 10px; cursor: pointer; font-weight: bold; box-shadow: 0 4px #239a8e; }
+
+        /* 記録リスト */
+        #book-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+        .book-card { background: white; border-radius: 15px; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: left; cursor: pointer; border: 2px solid #fff; position: relative; }
+        .book-card img { width: 100%; height: 140px; object-fit: cover; border-radius: 10px; margin-bottom: 5px; }
+        .title-badge { font-size: 13px; font-weight: bold; color: #333; margin-bottom: 3px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 1.2em; }
+        .date-badge { font-size: 10px; color: #999; }
+        .card-stars { color: #ffbf00; font-size: 12px; }
+        .delete-btn-card { position: absolute; top: -5px; right: -5px; background: #ff6b6b; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; z-index: 10; font-weight: bold; }
+
+        /* スクロール可能なモーダル */
+        #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 10px; }
+        .modal-content { background: white; width: 100%; max-width: 450px; max-height: 90vh; border-radius: 25px; padding: 0; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+        .modal-body { padding: 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .modal-img { width: 100%; border-radius: 15px; margin-bottom: 15px; }
+        .modal-title { font-size: 22px; font-weight: bold; color: var(--main-color); margin-bottom: 5px; }
+        .modal-date { font-size: 14px; color: #888; margin-bottom: 10px; }
+        .modal-stars { font-size: 24px; color: #ffbf00; margin-bottom: 15px; }
+        .modal-comment { font-size: 18px; font-weight: bold; line-height: 1.6; color: #444; text-align: left; background: #fff9ec; padding: 15px; border-radius: 10px; word-wrap: break-word; white-space: pre-wrap; }
+        .close-btn { position: absolute; top: 10px; right: 10px; width: 45px; height: 45px; background: #ff6b6b; color: white; border-radius: 50%; border: 3px solid white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; z-index: 1100; }
+
+        .backup-controls { margin: 20px 0; display: flex; justify-content: center; gap: 10px; }
+        .btn-small { padding: 8px 15px; font-size: 11px; border-radius: 10px; border: 1px solid #ddd; background: white; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="owl-mascot-container">
+        <div class="owl-mascot">
+            <div class="owl-eye left"><div class="owl-pupil"></div></div>
+            <div class="owl-eye right"><div class="owl-pupil"></div></div>
+            <div class="owl-beak"></div>
+        </div>
+    </div>
+    <h1>📚 わたしの どくしょ きろく</h1>
+
+    <div id="input-area">
+        <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none">
+        <button class="btn-camera" onclick="document.getElementById('camera-input').click()">📷 しゃしんを とる</button>
+        <img id="preview">
+        <input type="text" id="book-title" placeholder="ほんの なまえ (なくてもOK)">
+        <div class="stars" id="star-rating">
+            <span class="star" data-value="1">★</span><span class="star" data-value="2">★</span><span class="star" data-value="3">★</span><span class="star" data-value="4">★</span><span class="star" data-value="5">★</span>
+        </div>
+        <textarea id="comment" placeholder="どんな おはなし だった？"></textarea>
+        <button class="save-btn" onclick="saveBook()">きろくする！</button>
+    </div>
+
+    <div id="book-list"></div>
+
+    <div class="backup-controls">
+        <button class="btn-small" onclick="exportData()">💾 バックアップ</button>
+        <button class="btn-small" onclick="document.getElementById('import-input').click()">📂 よみこむ</button>
+        <input type="file" id="import-input" style="display:none" onchange="importData(event)">
+    </div>
+
+    <div id="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-btn" onclick="closeModal()">×</button>
+            <div class="modal-body">
+                <img id="modal-img" class="modal-img">
+                <div id="modal-title" class="modal-title"></div>
+                <div id="modal-date" class="modal-date"></div>
+                <div id="modal-stars" class="modal-stars"></div>
+                <div id="modal-comment" class="modal-comment"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedStars = 0;
+        let bookData = JSON.parse(localStorage.getItem('myBookLogs')) || [];
+        const stars = document.querySelectorAll('.star');
+
+        window.onload = () => renderBooks();
+
+        document.getElementById('camera-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => { 
+                    const img = document.getElementById('preview');
+                    img.src = e.target.result; img.style.display = 'block'; 
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        stars.forEach(star => {
+            star.addEventListener('click', function() {
+                selectedStars = this.getAttribute('data-value');
+                stars.forEach(s => s.classList.toggle('active', s.getAttribute('data-value') <= selectedStars));
+            });
+        });
+
+        function saveBook() {
+            const titleInput = document.getElementById('book-title').value;
+            const comment = document.getElementById('comment').value;
+            const previewImg = document.getElementById('preview').src;
+            
+            // 写真か星がない場合は警告を出す（タイトルは空でもOKにする）
+            if (!previewImg || previewImg.includes('window.location') || selectedStars === 0) { 
+                alert("「しゃしん」と「★」を えらんでね！"); 
+                return; 
+            }
+
+            const title = titleInput || "むだい"; // タイトルがない場合は「むだい」にする
+            const date = new Date();
+            const dateStr = `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()}`;
+            const newBook = { id: Date.now(), title: title, img: previewImg, stars: selectedStars, comment: comment, date: dateStr };
+            
+            try {
+                // データの保存を試みる
+                const tempBookData = [newBook, ...bookData];
+                localStorage.setItem('myBookLogs', JSON.stringify(tempBookData));
+                
+                // 保存に成功したら変数を更新して表示
+                bookData = tempBookData;
+                renderBooks();
+                
+                // 入力欄のリセット
+                document.getElementById('preview').style.display = 'none';
+                document.getElementById('preview').src = "";
+                document.getElementById('book-title').value = "";
+                document.getElementById('comment').value = "";
+                selectedStars = 0;
+                stars.forEach(s => s.classList.remove('active'));
+                
+                alert("きろく 完了！");
+            } catch (e) {
+                // 容量がいっぱいの場合など
+                console.error(e);
+                alert("ごめんね、しゃしんが大きすぎるか、記録がいっぱいで保存できなかったよ。古い記録を消すか、バックアップをとってから試してみてね。");
+            }
+        }
+
+        function renderBooks() {
+            const list = document.getElementById('book-list');
+            list.innerHTML = '';
+            bookData.forEach(book => {
+                const card = document.createElement('div');
+                card.className = 'book-card';
+                card.innerHTML = `
+                    <button class="delete-btn-card" onclick="event.stopPropagation(); deleteBook(${book.id});">×</button>
+                    <img src="${book.img}" onclick="openModal(${book.id})">
+                    <span class="title-badge">${book.title}</span>
+                    <div class="date-badge">📅 ${book.date}</div>
+                    <div class="card-stars">${'★'.repeat(book.stars)}</div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function openModal(bookId) {
+            const book = bookData.find(b => b.id === bookId);
+            if (!book) return;
+            document.getElementById('modal-img').src = book.img;
+            document.getElementById('modal-title').textContent = book.title;
+            document.getElementById('modal-date').textContent = "📅 とったひ： " + book.date;
+            document.getElementById('modal-stars').textContent = '★'.repeat(book.stars) + '☆'.repeat(5-book.stars);
+            document.getElementById('modal-comment').textContent = book.comment || "（かんそうは なし）";
+            document.getElementById('modal-overlay').style.display = 'flex';
+            document.querySelector('.modal-body').scrollTop = 0;
+        }
+
+        function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+
+        function deleteBook(id) {
+            if(confirm("けしてもいい？")) {
+                bookData = bookData.filter(b => b.id !== id);
+                localStorage.setItem('myBookLogs', JSON.stringify(bookData));
+                renderBooks();
+            }
+        }
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify(bookData)], {type: 'application/json'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = 'book_backup.json'; a.click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    bookData = JSON.parse(e.target.result);
+                    localStorage.setItem('myBookLogs', JSON.stringify(bookData));
+                    renderBooks();
+                    alert("よみこんだよ！");
+                } catch(err) { alert("エラー：よみこめなかったよ"); }
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
