@@ -130,13 +130,40 @@
 
         window.onload = () => renderBooks();
 
+        // 📷 写真が選択された時の処理（リサイズと圧縮を追加）
         document.getElementById('camera-input').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = e => { 
-                    const img = document.getElementById('preview');
-                    img.src = e.target.result; img.style.display = 'block'; 
+                reader.onload = function(event) { 
+                    const imgElement = new Image();
+                    imgElement.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+
+                        // 最大サイズを幅800pxに制限（アスペクト比を維持）
+                        const MAX_WIDTH = 800;
+                        let width = imgElement.width;
+                        let height = imgElement.height;
+
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(imgElement, 0, 0, width, height);
+
+                        // JPEG形式に変換して画質を0.7 (70%) に圧縮
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+                        // プレビューに適用
+                        const preview = document.getElementById('preview');
+                        preview.src = compressedDataUrl; 
+                        preview.style.display = 'block'; 
+                    };
+                    imgElement.src = event.target.result;
                 };
                 reader.readAsDataURL(file);
             }
@@ -154,23 +181,21 @@
             const comment = document.getElementById('comment').value;
             const previewImg = document.getElementById('preview').src;
             
-            // 写真か星がない場合は警告を出す（タイトルは空でもOKにする）
-            if (!previewImg || previewImg.includes('window.location') || selectedStars === 0) { 
+            // 写真か星がない場合は警告を出す
+            if (!previewImg || previewImg === "" || selectedStars === 0) { 
                 alert("「しゃしん」と「★」を えらんでね！"); 
                 return; 
             }
 
-            const title = titleInput || "むだい"; // タイトルがない場合は「むだい」にする
+            const title = titleInput || "むだい"; 
             const date = new Date();
             const dateStr = `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()}`;
             const newBook = { id: Date.now(), title: title, img: previewImg, stars: selectedStars, comment: comment, date: dateStr };
             
             try {
-                // データの保存を試みる
                 const tempBookData = [newBook, ...bookData];
                 localStorage.setItem('myBookLogs', JSON.stringify(tempBookData));
                 
-                // 保存に成功したら変数を更新して表示
                 bookData = tempBookData;
                 renderBooks();
                 
@@ -184,9 +209,8 @@
                 
                 alert("きろく 完了！");
             } catch (e) {
-                // 容量がいっぱいの場合など
                 console.error(e);
-                alert("ごめんね、しゃしんが大きすぎるか、記録がいっぱいで保存できなかったよ。古い記録を消すか、バックアップをとってから試してみてね。");
+                alert("ごめんね、たくさん記録がいっぱいで保存できなかったよ。古い記録を消すか、バックアップをとってから試してみてね。");
             }
         }
 
